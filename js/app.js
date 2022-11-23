@@ -92,6 +92,8 @@ var feluletVezerlo = (function () {
     inputLeiras: ".hozzaad__leiras",
     inputErtek: ".hozzaad__ertek",
     inputGomb: ".hozzaad__gomb",
+    bevetelTarolo: ".bevetelek__lista",
+    kiadasTarolo: '.kiadasok__lista',
   };
 
   return {
@@ -105,6 +107,34 @@ var feluletVezerlo = (function () {
 
     getDOMelemek: function () {
       return DOMelemek;
+    },
+
+    tetelMejelenites: function(obj, tipus) {
+        //HTML megirása
+        var html, ujHtml, elem;
+        console.log(obj);
+        console.log(tipus);
+        if(tipus === 'bev') {
+
+          elem = DOMelemek.bevetelTarolo;
+
+          html = '<div class="tetel clearfix" id="bevetel-%id%"><div class="tetel__leiras">%leiras%</div><div class="right clearfix"><div class="tetel__ertek">%ertek%</div><div class="tetel__torol"><button class="tetel__torol--gomb"><i class="ion-ios-close-outline"></i></button></div></div></div>';
+        } else if(tipus === 'kia') {
+
+          elem = DOMelemek.kiadasTarolo;
+
+          html = '<div class="tetel clearfix" id="kiadas-%id%"><div class="tetel__leiras">%leiras%</div><div class="right clearfix"><div class="tetel__ertek">%ertek%</div><div class="tetel__szazalek">21%</div><div class="tetel__torol"><button class="tetel__torol--gomb"><i class="ion-ios-close-outline"></i></button></div></div></div>';
+        }
+
+
+
+        //HTML feltöltése adatokkal
+        ujHtml = html.replace('%id%', obj.id);
+        ujHtml = ujHtml.replace('%leiras%', obj.leiras);
+        ujHtml = ujHtml.replace('%ertek%', obj.ertek);
+
+        //HTML megjelenítése, hozzáadása a DOM-hoz
+        document.querySelector(elem).insertAdjacentHTML('beforeend', ujHtml);
     }
   }
 })();
@@ -134,7 +164,6 @@ var vezerlo = (function (koltsegvetesVez, feluletVez) {
 
     // 1. bevitt adatok megszerzése
     input = feluletVezerlo.getInput();
-    console.log(input);
     //2. adatok átadása a kölcségvetés vezérlő modulnak
     ujTetelek = koltsegvetesVezerlo.tetelHozzaad(
       input.tipus,
@@ -142,6 +171,7 @@ var vezerlo = (function (koltsegvetesVez, feluletVez) {
       input.ertek
     );
     //3. femgjelenítése a felhasználói felületen UI
+    feluletVezerlo.tetelMejelenites(ujTetelek, input.tipus);
 
     //4. kölcségvetésnak az újraszámolása
 
