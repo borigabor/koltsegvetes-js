@@ -41,6 +41,17 @@ var koltsegvetesVezerlo = (function () {
     this.ertek = ertek;
   };
 
+  var vegosszegSzamolas = function(tipus) {
+    var osszeg = 0;
+
+    adat.tetelek[tipus].forEach(function(akt){
+      osszeg += akt.ertek;
+    });
+
+    adat.osszegek[tipus] = osszeg;
+
+  }
+
   var adat = {
     tetelek: {
       bev: [],
@@ -51,6 +62,11 @@ var koltsegvetesVezerlo = (function () {
       bev: 0,
       kia: 0,
     },
+
+    koltsegvetes: 0,
+    szazalek: -1
+  
+    
   };
 
   return {
@@ -76,6 +92,35 @@ var koltsegvetesVezerlo = (function () {
       //Új tétel visszaadása
       return ujTetel;
     },
+
+    koltsegvetesSzamolas: function() {
+      // összbevétel, összkiadás számolása
+        vegosszegSzamolas("bev");
+        vegosszegSzamolas("kia");
+
+        adat.koltsegvetes = adat.osszegek.bev - adat.osszegek.kia;
+
+    // százalék számolása
+    if(adat.osszegek.bev > 0) {
+      adat.szazalek = Math.round((adat.osszegek.kia / adat.osszegek.bev) * 100);
+    } else {
+      adat.szazalek = -1;
+    }
+    
+
+
+     
+    },
+
+    getKoltsegvetes: function() {
+      return {
+        koltsegvetes: adat.koltsegvetes,
+        osszBevetel: adat.osszegek.bev,
+        osszKiadas: adat.osszegek.kia,
+        szazalek: adat.szazalek
+      }      
+    },
+
     teszt: function () {
       console.log(adat);
     },
@@ -91,6 +136,10 @@ var feluletVezerlo = (function () {
     inputGomb: ".hozzaad__gomb",
     bevetelTarolo: ".bevetelek__lista",
     kiadasTarolo: ".kiadasok__lista",
+    koltsegvetesCimke: ".koltsegvetes__ertek",
+    osszbevetelCimke: ".koltsegvetes__bevetelek--ertek",
+    osszkiadasCimke: ".koltsegvetes__kiadasok--ertek",
+    szazalekCimke: ".koltsegvetes__kiadasok--szazalek"
   };
 
   return {
@@ -145,6 +194,21 @@ var feluletVezerlo = (function () {
       });
       mezokTomb[0].focus(); // visszaugrik a focus az első beviteli mezőre
     },
+
+    koltsegvetesMegjelenites: function(obj) {
+        document.querySelector(DOMelemek.koltsegvetesCimke).textContent = obj.koltsegvetes;
+
+        document.querySelector(DOMelemek.osszbevetelCimke).textContent = obj.osszBevetel;
+
+        document.querySelector(DOMelemek.osszkiadasCimke).textContent = obj.osszKiadas;
+
+        if(obj.szazalek > 0) {
+          document.querySelector(DOMelemek.szazalekCimke).textContent = obj.szazalek + "%";
+        } else {
+          document.querySelector(DOMelemek.szazalekCimke).textContent = '-';
+        }
+     
+    }
   };
 })();
 
@@ -168,8 +232,14 @@ var vezerlo = (function (koltsegvetesVez, feluletVez) {
 
   var osszegfrissitese = function () {
     //1. kölcségvetésnak az újraszámolása
+    koltsegvetesVezerlo.koltsegvetesSzamolas();
+
     // 2 összeg visszadása
+    var koltsegvetes = koltsegvetesVezerlo.getKoltsegvetes();
+
     //3. az összeg megejelenítése a felületen
+    feluletVezerlo.koltsegvetesMegjelenites(koltsegvetes);
+    
   };
 
   var vezTetelHozzadas = function () {
@@ -197,6 +267,12 @@ var vezerlo = (function (koltsegvetesVez, feluletVez) {
 
   return {
     init: function () {
+      feluletVezerlo.koltsegvetesMegjelenites({
+        koltsegvetes: 0,
+        osszBevetel: 0,
+        osszKiadas: 0,
+        szazalek: -1
+      });
       esemenyKezeloBealit();
     },
   };
