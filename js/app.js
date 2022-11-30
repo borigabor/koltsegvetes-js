@@ -93,6 +93,22 @@ var koltsegvetesVezerlo = (function () {
       return ujTetel;
     },
 
+    tetelTorol: function(tipus, id) {
+
+      var idTomb, index;
+
+      idTomb = adat.tetelek[tipus].map(function(aktualis){
+
+        return aktualis.id;
+
+      });
+      index = idTomb.indexOf(id);
+
+      if(index !== -1) {
+        adat.tetelek[tipus].splice(index, 1);
+      }
+    },
+
     koltsegvetesSzamolas: function() {
       // összbevétel, összkiadás számolása
         vegosszegSzamolas("bev");
@@ -107,8 +123,6 @@ var koltsegvetesVezerlo = (function () {
       adat.szazalek = -1;
     }
     
-
-
      
     },
 
@@ -139,7 +153,8 @@ var feluletVezerlo = (function () {
     koltsegvetesCimke: ".koltsegvetes__ertek",
     osszbevetelCimke: ".koltsegvetes__bevetelek--ertek",
     osszkiadasCimke: ".koltsegvetes__kiadasok--ertek",
-    szazalekCimke: ".koltsegvetes__kiadasok--szazalek"
+    szazalekCimke: ".koltsegvetes__kiadasok--szazalek",
+    kontener: ".kontener"
   };
 
   return {
@@ -164,12 +179,12 @@ var feluletVezerlo = (function () {
         elem = DOMelemek.bevetelTarolo;
 
         html =
-          '<div class="tetel clearfix" id="bevetel-%id%"><div class="tetel__leiras">%leiras%</div><div class="right clearfix"><div class="tetel__ertek">%ertek%</div><div class="tetel__torol"><button class="tetel__torol--gomb"><i class="ion-ios-close-outline"></i></button></div></div></div>';
+          '<div class="tetel clearfix" id="bev-%id%"><div class="tetel__leiras">%leiras%</div><div class="right clearfix"><div class="tetel__ertek">%ertek%</div><div class="tetel__torol"><button class="tetel__torol--gomb"><i class="ion-ios-close-outline"></i></button></div></div></div>';
       } else if (tipus === "kia") {
         elem = DOMelemek.kiadasTarolo;
 
         html =
-          '<div class="tetel clearfix" id="kiadas-%id%"><div class="tetel__leiras">%leiras%</div><div class="right clearfix"><div class="tetel__ertek">%ertek%</div><div class="tetel__szazalek">21%</div><div class="tetel__torol"><button class="tetel__torol--gomb"><i class="ion-ios-close-outline"></i></button></div></div></div>';
+          '<div class="tetel clearfix" id="kia-%id%"><div class="tetel__leiras">%leiras%</div><div class="right clearfix"><div class="tetel__ertek">%ertek%</div><div class="tetel__szazalek">21%</div><div class="tetel__torol"><button class="tetel__torol--gomb"><i class="ion-ios-close-outline"></i></button></div></div></div>';
       }
 
       //HTML feltöltése adatokkal
@@ -179,6 +194,14 @@ var feluletVezerlo = (function () {
 
       //HTML megjelenítése, hozzáadása a DOM-hoz
       document.querySelector(elem).insertAdjacentHTML("beforeend", ujHtml);
+    },
+
+    tetelTorles: function(tetelID) {
+
+      var elem = document.getElementById(tetelID)
+
+      elem.parentNode.removeChild(elem);
+
     },
 
     urlapTorles: function () {
@@ -228,6 +251,10 @@ var vezerlo = (function (koltsegvetesVez, feluletVez) {
         vezTetelHozzadas();
       }
     });
+
+    document.querySelector(DOM.kontener).addEventListener("click", vezTetelTorles);
+  
+
   };
 
   var osszegfrissitese = function () {
@@ -265,6 +292,29 @@ var vezerlo = (function (koltsegvetesVez, feluletVez) {
     }
   };
 
+  var vezTetelTorles = function(event) {
+
+    var tetelID, splitID, tipus, ID;
+
+     tetelID = event.target.parentNode.parentNode.parentNode.parentNode.id;
+    if(tetelID) {
+      // bev-0
+      splitID = tetelID.split('-'); 
+      tipus = splitID[0];
+      ID = parseInt(splitID[1]);
+    }
+
+    // 1. tétel törlése az adat objektumbol
+    koltsegvetesVezerlo.tetelTorol(tipus, ID);
+
+    // 2. tétel törlése a felületröl
+    feluletVezerlo.tetelTorles(tetelID);
+
+
+    // 3. összegek újraszámolása és megjelenítése a felületen
+    osszegfrissitese();
+  };
+
   return {
     init: function () {
       feluletVezerlo.koltsegvetesMegjelenites({
@@ -279,3 +329,11 @@ var vezerlo = (function (koltsegvetesVez, feluletVez) {
 })(koltsegvetesVezerlo, feluletVezerlo);
 
 vezerlo.init();
+
+/* 
+  - eseménykezelő
+  - tétel törlése az adatstruktúrábol
+  - tétel törlése a felületről
+  - költségvetés újraszámolása
+  - felülete visszairjuk az ujra számolt értékeket
+*/
