@@ -33,6 +33,21 @@ var koltsegvetesVezerlo = (function () {
     this.id = id;
     this.leiras = leiras;
     this.ertek = ertek;
+    this.szazalek = -1;
+  };
+
+  Kiadas.prototype.szazalekSzamitas = function(osszBevetel) {
+
+    if(osszBevetel > 0) {
+      this.szazalek = Math.round((this.ertek / osszBevetel) * 100);
+    } else {
+      this.szazalek = -1;
+    }
+ 
+  };
+
+  Kiadas.prototype.getSzazalek = function() {
+    return this.szazalek;
   };
 
   var Bevetel = function (id, leiras, ertek) {
@@ -126,6 +141,23 @@ var koltsegvetesVezerlo = (function () {
      
     },
 
+    szazalekokSzamolasa: function() {
+
+      adat.tetelek.kia.forEach(function(aktualisElem) {
+        aktualisElem.szazalekSzamitas(adat.osszegek.bev);
+      });
+
+    },
+
+    szazaleklekerdezese: function() {
+      var kiadasSzazalekok = adat.tetelek.kia.map(function(aktualisElem){
+        return aktualisElem.getSzazalek();
+      });
+
+      return kiadasSzazalekok;
+
+    },
+
     getKoltsegvetes: function() {
       return {
         koltsegvetes: adat.koltsegvetes,
@@ -154,7 +186,37 @@ var feluletVezerlo = (function () {
     osszbevetelCimke: ".koltsegvetes__bevetelek--ertek",
     osszkiadasCimke: ".koltsegvetes__kiadasok--ertek",
     szazalekCimke: ".koltsegvetes__kiadasok--szazalek",
-    kontener: ".kontener"
+    kontener: ".kontener",
+    szazalekokCimke: ".tetel__szazalek",
+    datumCimke: ".koltsegvetes__cim--honap"
+  };
+
+  var szamFormazo = function(szam, tipus) {
+
+    var elojel;
+
+    /*
+      + vagy - jel a szám elé 
+      ezres tagolás
+     */
+
+      szam = Math.abs(szam); // ebszolult érték
+      szam = szam.toLocaleString();
+
+      tipus === 'kia' ? elojel = '-' : elojel = '+';
+
+      szam = elojel + ' ' + szam;
+
+      return szam;
+
+  };
+
+  var nodeListForEach = function(lista, calcback) {
+
+    for(var i = 0; i < lista.length; i++) {
+      calcback(lista[i], i);
+    }
+
   };
 
   return {
@@ -190,7 +252,7 @@ var feluletVezerlo = (function () {
       //HTML feltöltése adatokkal
       ujHtml = html.replace("%id%", obj.id);
       ujHtml = ujHtml.replace("%leiras%", obj.leiras);
-      ujHtml = ujHtml.replace("%ertek%", obj.ertek);
+      ujHtml = ujHtml.replace("%ertek%", szamFormazo(obj.ertek, tipus));
 
       //HTML megjelenítése, hozzáadása a DOM-hoz
       document.querySelector(elem).insertAdjacentHTML("beforeend", ujHtml);
@@ -219,11 +281,16 @@ var feluletVezerlo = (function () {
     },
 
     koltsegvetesMegjelenites: function(obj) {
-        document.querySelector(DOMelemek.koltsegvetesCimke).textContent = obj.koltsegvetes;
 
-        document.querySelector(DOMelemek.osszbevetelCimke).textContent = obj.osszBevetel;
+      var tipus;
 
-        document.querySelector(DOMelemek.osszkiadasCimke).textContent = obj.osszKiadas;
+        obj.koltsegvetes > 0 ? tipus = 'bev' : 'kia';
+
+        document.querySelector(DOMelemek.koltsegvetesCimke).textContent = szamFormazo(obj.koltsegvetes, tipus);
+
+        document.querySelector(DOMelemek.osszbevetelCimke).textContent = szamFormazo(obj.osszBevetel, 'bev');
+
+        document.querySelector(DOMelemek.osszkiadasCimke).textContent = szamFormazo(obj.osszKiadas, 'kia');
 
         if(obj.szazalek > 0) {
           document.querySelector(DOMelemek.szazalekCimke).textContent = obj.szazalek + "%";
@@ -231,7 +298,54 @@ var feluletVezerlo = (function () {
           document.querySelector(DOMelemek.szazalekCimke).textContent = '-';
         }
      
+    },
+
+    szazalekokMegjelenitese: function(szazalekok) {
+
+      var elemek = document.querySelectorAll(DOMelemek.szazalekokCimke);
+
+
+      nodeListForEach(elemek, function(aktualisElem, index) {
+
+        if(szazalekok[index] > 0) {
+          aktualisElem.textContent = szazalekok[index] + "%";
+        } else {
+          aktualisElem.textContent = '---';
+        }
+        
+
+      });
+
+
+    },
+
+    datumMegjelenites: function() {
+
+      var most, ev, honap, honapok;
+
+      honapok = ['Január', 'Február', 'Március', 'Április', 'Május', 'Június', 'Július', 'Augusztus', 'Szeptember', 'Október', 'November', 'December'];
+
+      most = new Date();
+      ev = most.getFullYear();
+      honap = most.getMonth();
+
+      document.querySelector(DOMelemek.datumCimke).textContent = ev + '.' + honapok[honap];
+
+
+    },
+
+    tetelTipusValtozas: function() {
+
+      var elemek = document.querySelectorAll(DOMelemek.inputTipus + ',' + DOMelemek.inputLeiras + ',' + DOMelemek.inputErtek);
+
+      nodeListForEach(elemek, function(aktualisElem) {
+        aktualisElem.classList.toggle('red-focus');
+      });
+
+      document.querySelector(DOMelemek.inputGomb).classList.toggle('red');
+
     }
+
   };
 })();
 
@@ -254,6 +368,7 @@ var vezerlo = (function (koltsegvetesVez, feluletVez) {
 
     document.querySelector(DOM.kontener).addEventListener("click", vezTetelTorles);
   
+    document.querySelector(DOM.inputTipus).addEventListener('change', feluletVezerlo.tetelTipusValtozas);
 
   };
 
@@ -266,6 +381,19 @@ var vezerlo = (function (koltsegvetesVez, feluletVez) {
 
     //3. az összeg megejelenítése a felületen
     feluletVezerlo.koltsegvetesMegjelenites(koltsegvetes);
+    
+  };
+
+  var szazalekokfrissitese = function () {
+
+    //1. százalékok  újraszámolása
+    koltsegvetesVezerlo.szazalekokSzamolasa();
+
+    // 2 százalékok kiolvasása a költségvetés vezérlőböl
+    var kiadasSzazalekok = koltsegvetesVezerlo.szazaleklekerdezese();
+
+    //3. felület frissitése az új százalékokkal
+    feluletVezerlo.szazalekokMegjelenitese(kiadasSzazalekok);
     
   };
 
@@ -289,6 +417,9 @@ var vezerlo = (function (koltsegvetesVez, feluletVez) {
 
       // 5 költségvetés ujraszámolása és frissitése a felületen
       osszegfrissitese();
+
+      // 6 százalékok újraszámítása
+      szazalekokfrissitese();
     }
   };
 
@@ -313,10 +444,19 @@ var vezerlo = (function (koltsegvetesVez, feluletVez) {
 
     // 3. összegek újraszámolása és megjelenítése a felületen
     osszegfrissitese();
+
+    // 4 százalékok újraszámítása
+    szazalekokfrissitese();
+
+
+
   };
 
   return {
     init: function () {
+
+      feluletVezerlo.datumMegjelenites();
+
       feluletVezerlo.koltsegvetesMegjelenites({
         koltsegvetes: 0,
         osszBevetel: 0,
